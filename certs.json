@@ -1,0 +1,8 @@
+{
+  "certificate_id": "9eBgHSvPPG8yQFF6MFHfvwzFBwC7gXMzkFMA3heqMHxN",
+  "issuer_public_key": "1bRyem/P2jrjCErntdYnmNwXz9eXyPch64lhd247rgk=",
+  "organization_name": "Google INC.",
+  "valid_from": "2026-01-31T19:07:57Z",
+  "valid_to": "2027-01-31T19:07:57Z",
+  "ca_signature": "/UR8PLNZOG8qWpE3Ni9KfkZuALqGwRudukNr9A081RUvdFHnNAyoRvl7WtvgvFQVIQqahj6DHbDZIyYc4hBGBw=="
+}
