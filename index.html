@@ -1,1 +1,925 @@
-qsd
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>DAVP - Decentralized Asset Verification Protocol</title>
+    <meta
+      name="description"
+      content="Prove authorship, integrity, and timestamp of any digital asset. Free verification, optional enterprise services."
+    />
+
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var systemDark =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = saved === 'light' || saved === 'dark' ? saved : systemDark ? 'dark' : 'light';
+          document.documentElement.dataset.theme = theme;
+        } catch (_) {}
+      })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+
+      :root {
+        --bg: #ffffff;
+        --fg: #222222;
+        --el-bg: #f8f8f8;
+        --hairline: rgba(0, 0, 0, 0.08);
+        --subtle: rgb(92, 92, 92);
+        --muted: rgba(68, 68, 68, 0.62);
+        --soft: rgba(0, 0, 0, 0.04);
+        --card-bg: rgba(255, 255, 255, 0.9);
+        --glass: rgba(255, 255, 255, 0.7);
+        --shadow: rgba(0, 0, 0, 0.04);
+        --mesh-stroke: rgba(0, 0, 0, 0.18);
+      }
+
+      :root[data-theme="dark"] {
+        --bg: #000000;
+        --fg: #fff;
+        --el-bg: #0f0f0f;
+        --hairline: rgba(255, 255, 255, 0.2);
+        --subtle: rgb(255, 255, 255);
+        --muted: rgba(248, 248, 248, 0.883);
+        --soft: rgba(255, 255, 255, 0.08);
+        --card-bg: rgba(0, 0, 0, 0.18);
+        --glass: rgba(0, 0, 0, 0.10);
+        --shadow: rgba(255, 255, 255, 0.06);
+        --mesh-stroke: rgba(255, 255, 255, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      html {
+        scroll-padding-top: 80px;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Geist", sans-serif;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+      }
+
+      :root.themeTransition body,
+      :root.themeTransition .bg::before,
+      :root.themeTransition .topbar,
+      :root.themeTransition .btn,
+      :root.themeTransition .toggle,
+      :root.themeTransition .card,
+      :root.themeTransition .navlink,
+      :root.themeTransition footer {
+        transition:
+          background-color 180ms ease,
+          color 180ms ease,
+          border-color 180ms ease,
+          box-shadow 180ms ease,
+          opacity 180ms ease;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+      }
+
+      .shell {
+        min-height: 100%;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .scroll-blur-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--bg);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1;
+        transition: opacity 0.3s ease-out;
+        will-change: opacity;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      .bg {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        transform: translate3d(0, 0, 0);
+        will-change: transform;
+      }
+
+      .bg::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: none;
+      }
+
+      .bg svg {
+        width: 1200px;
+        height: 800px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 1;
+        color: var(--fg);
+      }
+
+      .contentBg {
+        position: relative;
+        left: 50%;
+        width: 100vw;
+        margin-left: -50vw;
+        background: var(--el-bg);
+        padding: 0 20px 10px;
+      }
+
+      .container {
+        position: relative;
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 0 20px 10px;
+        z-index: 1;
+      }
+
+
+      .topbar {
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 1040px;
+        z-index: 3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 12px 18px;
+        border-radius: 18px;
+        border: 1px solid var(--hairline);
+        background: var(--glass);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+
+      .brand .name {
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .brand .tag {
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      nav {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .navlink {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .toggle {
+        border: 1px solid var(--hairline);
+        background: var(--glass);
+        color: var(--fg);
+        border-radius: 999px;
+        padding: 8px 10px;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+      }
+
+      .toggle:focus-visible {
+        outline: 2px solid var(--fg);
+        outline-offset: 2px;
+      }
+
+      .hero {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 18px;
+        padding: 0 20px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(34px, 5vw, 56px);
+        line-height: 1.02;
+        letter-spacing: -0.04em;
+        font-weight: 550;
+      }
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 600;
+        
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 68ch;
+        font-size: 16px;
+        color: var(--subtle);
+        line-height: 1.55;
+      }
+
+      .ctaRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        border-radius: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--hairline);
+        background: var(--glass);
+        color: var(--fg);
+        font-size: 14px;
+        line-height: 1;
+        white-space: nowrap;
+        transition: transform 120ms ease;
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+      }
+
+      .btn:hover {
+        text-decoration: none;
+        transform: translateY(-1px);
+      }
+
+      .btn:active {
+        transform: translateY(0px);
+      }
+
+      .btn.primary {
+        background: var(--glass);
+        color: var(--fg);
+        border-color: var(--fg);
+      }
+
+      .btn.primary:hover {
+        text-decoration: none;
+      }
+
+      .btn.disabled {
+        opacity: 0.42;
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .btn:focus-visible {
+        outline: 2px solid var(--fg);
+        outline-offset: 2px;
+      }
+
+      .section {
+        margin-top: 28px;
+        padding-top: 22px;
+      }
+
+      /* First section inside contentBg needs top spacing */
+      .contentBg .section:first-of-type {
+        margin-top: 0;
+        padding-top: 20px;
+        border-top: none;
+      }
+
+      .sectionTitle {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+        
+        text-align: center;
+        flex-wrap: wrap;
+
+      }
+
+      .sectionTitle h2 {
+        position: relative;
+      }
+
+      .sectionTitle .anchor-link {
+        position: absolute;
+        left: -1.0em;
+        top: 0;
+        font-weight: 400;
+        color: var(--fg);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        text-decoration: none;
+        font-size: 1em;
+      }
+
+      .sectionTitle:hover .anchor-link {
+        opacity: 1;
+      }
+
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0;
+      }
+
+      .card {
+        border: 1px solid var(--hairline);
+        border-radius: 0;
+        padding: 24px 20px;
+        background: var(--bg);
+        box-shadow: none;
+      }
+
+      /* internal divider between cards */
+      .grid3 .card:not(:first-child) {
+        border-left: none;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        letter-spacing: -0.02em;
+      }
+
+      .card p {
+        margin: 0;
+      }
+
+
+      /* internal divider between cards */
+      .grid3 .card:not(:first-child) {
+        border-left: none;
+      }
+
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .card p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--subtle);
+        line-height: 1.55;
+      }
+
+      .downloads {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .dlRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .hint {
+        font-size: 13px;
+        color: var(--muted);
+        margin: 2px 0 0;
+        line-height: 1.6;
+      }
+
+      footer {
+          padding-top: 12px;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: center;
+        }
+        footer > div:first-child {
+          justify-self: start;
+        }
+        footer > div:nth-child(2) {
+          justify-self: center;
+        }
+        footer > div:last-child {
+          justify-self: end;
+        }
+
+      .fine {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .scrollCue {
+        position: absolute;
+        bottom: 38px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        opacity: 0;
+        animation: cueIn 0.6s ease forwards 2s;
+      }
+
+      .cueLink {
+        color: var(--fg);
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .cueText {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      
+      
+
+      .flowChart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        margin: 32px 0;
+        padding: 32px 24px;
+        border: 1px solid var(--hairline);
+        background: var(--bg);
+      }
+
+      .flowRow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        width: 100%;
+      }
+
+      .flowStep {
+        padding: 10px 16px;
+        border: 1px solid var(--hairline);
+        background: var(--el-bg);
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        border-radius: 4px;
+      }
+
+      .flowArrow {
+        font-size: 18px;
+        color: var(--muted);
+        font-family: monospace;
+        font-weight: bold;
+      }
+
+      .flowArrowDown {
+        font-size: 18px;
+        color: var(--muted);
+        font-family: monospace;
+        font-weight: bold;
+        transform: rotate(90deg);
+      }
+
+      @keyframes cueIn {
+        to {
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 860px) {
+        .grid3 {
+          grid-template-columns: 1fr;
+        }
+        .grid3 .card {
+          border: 1px solid var(--hairline);
+        }
+        .grid3 .card + .card {
+          border-top: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        :root.themeTransition body,
+        :root.themeTransition .bg::before,
+        :root.themeTransition .btn,
+        :root.themeTransition .toggle,
+        :root.themeTransition .card,
+        :root.themeTransition .navlink,
+        :root.themeTransition footer {
+          transition: none;
+        }
+
+        .btn {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="shell">
+            <div class="bg" aria-hidden="true">
+        <svg viewBox="0 0 1200 800" role="img" aria-label="deprecated backdrop" style="display:none">
+          <!-- simple crisp graph: nodes + connections -->
+          <g stroke="currentColor" stroke-opacity="0.08" stroke-width="1" stroke-linecap="round" fill="none">
+            <!-- horizontal grid -->
+            <path d="M0 200 H1200" />
+            <path d="M0 400 H1200" />
+            <path d="M0 600 H1200" />
+            <!-- vertical grid -->
+            <path d="M200 0 V800" />
+            <path d="M600 0 V800" />
+            <path d="M1000 0 V800" />
+            <!-- diagonals -->
+            <path d="M0 0 L1200 800" />
+            <path d="M0 800 L1200 0" />
+              <stop offset="0" stop-color="currentColor" stop-opacity="0.9" />
+              <stop offset="1" stop-color="currentColor" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+
+          <g filter="url(#soften)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1">
+            <path d="M95 610 C 210 520, 330 520, 455 420" stroke-opacity="0.10" />
+            <path d="M190 160 C 320 230, 420 240, 545 320" stroke-opacity="0.10" />
+            <path d="M540 320 C 660 395, 760 390, 915 300" stroke-opacity="0.10" />
+            <path d="M455 420 C 590 520, 720 550, 1005 610" stroke-opacity="0.09" />
+            <path d="M330 520 C 470 560, 610 560, 760 510" stroke-opacity="0.08" />
+            <path d="M455 420 C 420 275, 530 205, 690 190" stroke-opacity="0.08" />
+            <path d="M690 190 C 820 185, 930 220, 1050 275" stroke-opacity="0.08" />
+            <path d="M220 700 C 380 650, 520 640, 710 650" stroke-opacity="0.06" />
+            <path d="M710 650 C 860 660, 980 685, 1120 710" stroke-opacity="0.06" />
+            <path d="M120 260 C 250 310, 360 350, 455 420" stroke-opacity="0.08" />
+          </g>
+
+          <g fill="currentColor">
+            <circle cx="190" cy="160" r="4" opacity="0.42" />
+            <circle cx="545" cy="320" r="4" opacity="0.42" />
+            <circle cx="915" cy="300" r="4" opacity="0.42" />
+            <circle cx="455" cy="420" r="4" opacity="0.42" />
+            <circle cx="330" cy="520" r="4" opacity="0.42" />
+            <circle cx="760" cy="510" r="4" opacity="0.42" />
+            <circle cx="95" cy="610" r="4" opacity="0.42" />
+            <circle cx="1005" cy="610" r="4" opacity="0.42" />
+            <circle cx="690" cy="190" r="4" opacity="0.42" />
+            <circle cx="1050" cy="275" r="4" opacity="0.42" />
+            <circle cx="220" cy="700" r="4" opacity="0.34" />
+            <circle cx="1120" cy="710" r="4" opacity="0.34" />
+          </g>
+
+          <g opacity="0.12">
+            <circle cx="455" cy="420" r="120" fill="url(#node)" />
+            <circle cx="690" cy="190" r="110" fill="url(#node)" />
+            <circle cx="1005" cy="610" r="130" fill="url(#node)" />
+          </g>
+        </svg>
+        <svg viewBox="0 0 1200 800" role="img" aria-label="decentralized constellation" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+              <circle cx="2" cy="2" r="1" fill="var(--mesh-stroke)" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dots)" />
+          <g stroke="var(--mesh-stroke)" stroke-width="1" stroke-linecap="round" fill="none">
+            <line x1="150" y1="120" x2="420" y2="260" />
+            <line x1="420" y1="260" x2="780" y2="160" />
+            <line x1="780" y1="160" x2="1020" y2="340" />
+            <line x1="420" y1="260" x2="340" y2="500" />
+            <line x1="340" y1="500" x2="680" y2="560" />
+            <line x1="680" y1="560" x2="1020" y2="340" />
+            <line x1="340" y1="500" x2="180" y2="680" />
+            <line x1="680" y1="560" x2="940" y2="700" />
+          </g>
+          <g fill="currentColor" opacity="0.85">
+            <circle cx="150" cy="120" r="4" />
+            <circle cx="420" cy="260" r="4" />
+            <circle cx="780" cy="160" r="4" />
+            <circle cx="1020" cy="340" r="4" />
+            <circle cx="340" cy="500" r="4" />
+            <circle cx="680" cy="560" r="4" />
+            <circle cx="180" cy="680" r="4" />
+            <circle cx="940" cy="700" r="4" />
+          </g>
+        </svg>
+      </div>
+
+            <div class="container">
+        <div class="topbar">
+          <div class="brand">
+            <div class="name">Decentralized Asset Verification Protocol</div>
+          </div>
+          <nav>
+            <a class="navlink" href="#howitworks">How it works</a>
+            <a class="navlink" href="#getstarted">Get Started</a>
+            <a class="navlink" href="#coreflow">Core Flow</a>
+            <button class="toggle" type="button" id="themeToggle" aria-label="Toggle theme">
+              <i class="fas fa-sun icon-light"></i>
+              <i class="fas fa-moon icon-dark" style="display: none;"></i>
+            </button>
+          </nav>
+        </div>
+
+        <main style="padding-top: 80px; scroll-padding-top: 100px;">
+          <section class="hero" id="hero">
+            <h1>DAVP: Decentralized Asset Verification Protocol</h1>
+            <p class="lead">
+              Prove authorship, integrity, and timestamp of any digital asset - text, code, images, videos, or artworks.
+              Verification is always free, with optional enterprise services for businesses and organizations.
+            </p>
+
+            <div class="ctaRow">
+              <a class="btn primary" href="#downloads">Download</a>
+              <a class="btn" href="#links">Docs / GitHub</a>
+            </div>
+          </section>
+
+          <div class="contentBg"><div class="container">
+
+          <section class="section" id="howitworks">
+            <div class="sectionTitle">
+              <h2 id="howitworks"><a href="#howitworks" class="anchor-link">#</a>How it works</h2>
+            </div>
+
+            <p style="color: var(--muted);">
+              DAVP is a decentralized protocol for publishing and verifying cryptographic proofs. Truth is determined by cryptography, distribution is handled by peer-to-peer networking, and no node is ever trusted with authority.
+            </p>
+
+            <div class="grid3">
+              <div class="card">
+                <h3>Asset Proofs</h3>
+                <p>
+                  Immutable proof objects containing a BLAKE3 hash, creator Ed25519 signature, UTC timestamp, and metadata (type, AI flag, tags, parent verification_id). Signed and globally unique.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Decentralized Network</h3>
+                <p>
+                  Peer-to-peer mesh with gossip replication. A Common Network Tracker (CNT) bootstraps verified nodes; after bootstrap, the protocol runs without any central component.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Verification</h3>
+                <p>
+                  Anyone can verify locally: recompute the hash, check the Ed25519 signature, and validate metadata. Optional issuer certificates can be queried off-chain for organizational trust.
+                </p>
+              </div>
+            </div>
+            <div class="grid3">
+              <div class="card">
+                <h3>Monetization</h3>
+                <p>
+                  Protocol usage is always free. Businesses pay for bulk registration, certified/legal timestamps, enterprise APIs, and trusted node operation. Payments are out-of-band; the protocol remains open.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Security</h3>
+                <p>
+                  BLAKE3 hashing and Ed25519 signatures. Metadata is fully signed. Proofs are immutable. Protocol versioning ensures forward compatibility. No trust by position—only cryptographic trust.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Adoption</h3>
+                <p>
+                  Reference Rust implementation with client, node, and CNT. Start with text, code, and images. SDK and documentation provided. Scale as invisible infrastructure.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          </div><!-- /container -->
+          </div><!-- /contentBg -->
+
+          <section class="section" id="getstarted" style="background: var(--bg); padding: 32px 20px; margin: 0 -20px;">
+            <div class="container">
+              <div class="sectionTitle">
+                <h2 id="getstarted"><a href="#getstarted" class="anchor-link">#</a>Get Started</h2>
+              </div>
+<p>Open source Rust implementation. Run as a CLI tool, server, or embed in your app.</p>
+              <div class="downloads">
+                
+                <div class="dlRow">
+                  <a class="btn primary" href="https://github.com/yourorg/davp/releases" rel="noopener">See releases</a>
+                  <a class="btn" href="https://github.com/davpfoundation/davp" rel="noopener">GitHub</a>
+                  <br>
+                </div>
+                
+              </div>
+            </div>
+          </section>
+
+          <div class="contentBg"><div class="container">
+
+          <section class="section" id="coreflow">
+            <div class="sectionTitle">
+              <h2 id="coreflow"><a href="#coreflow" class="anchor-link">#</a>Core Flow</h2>
+            </div>
+            
+            <div style="border: 1px solid var(--hairline); background: #f3f2f3; border-radius: 4px; overflow: hidden;">
+              <iframe width="768" height="432" src="https://miro.com/app/live-embed/uXjVGH01rX0=/?embedMode=view_only_without_ui&moveToViewport=-1746,781,4305,2292&embedId=384053993781" frameborder="0" scrolling="no" allow="fullscreen; clipboard-read; clipboard-write" allowfullscreen style="width: 100%; height: auto; aspect-ratio: 768 / 432; border: none;"></iframe>
+            </div>
+            <p class="hint" style="margin-top: 24px; margin-bottom: 0; text-align: center;">
+              Each step is cryptographically bound; proofs are immutable. Anyone can verify locally without trusting a third party.
+            </p>
+          </section>
+
+          </div><!-- /container -->
+          </div><!-- /contentBg -->
+          </main>
+
+        <footer>
+          <div class="fine" style="display: flex; align-items: center; ">Decentralized. Open Source. Trustless Verification.</div>
+          
+          <div class="fine" style="text-align: center;">  <span id="year"></span></div>
+          <div style="text-align: right">
+            <img src="Developed-By-a-Human-Not-By-AI-Badge-white@2x.png" alt="Developed by a Human (light mode)" class="badge-light" style="height: 32px; display: block;">
+            <img src="Developed-By-a-Human-Not-By-AI-Badge-black@2x.png" alt="Developed by a Human (dark mode)" class="badge-dark" style="height: 32px; display: none;">
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var btn = document.getElementById('themeToggle');
+        var year = document.getElementById('year');
+        var bg = document.querySelector('.bg');
+
+        if (year) year.textContent = String(new Date().getFullYear());
+
+        function setTheme(theme) {
+          root.classList.add('themeTransition');
+          root.dataset.theme = theme;
+          try {
+            localStorage.setItem('theme', theme);
+          } catch (_) {}
+
+          // Toggle badge visibility
+          var lightBadge = document.querySelector('.badge-light');
+          var darkBadge = document.querySelector('.badge-dark');
+          if (lightBadge && darkBadge) {
+            if (theme === 'dark') {
+              lightBadge.style.display = 'none';
+              darkBadge.style.display = 'block';
+            } else {
+              lightBadge.style.display = 'block';
+              darkBadge.style.display = 'none';
+            }
+          }
+
+          // Toggle theme icons
+          var iconLight = document.querySelector('.icon-light');
+          var iconDark = document.querySelector('.icon-dark');
+          if (iconLight && iconDark) {
+            if (theme === 'dark') {
+              iconLight.style.display = 'none';
+              iconDark.style.display = 'inline';
+            } else {
+              iconLight.style.display = 'inline';
+              iconDark.style.display = 'none';
+            }
+          }
+
+          window.setTimeout(function () {
+            root.classList.remove('themeTransition');
+          }, 220);
+        }
+
+        function toggleTheme() {
+          var current = root.dataset.theme === 'dark' ? 'dark' : 'light';
+          setTheme(current === 'dark' ? 'light' : 'dark');
+        }
+
+        if (btn) btn.addEventListener('click', toggleTheme);
+
+        // Initialize badge visibility on load
+        var currentTheme = root.datasetTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        var lightBadge = document.querySelector('.badge-light');
+        var darkBadge = document.querySelector('.badge-dark');
+        if (lightBadge && darkBadge) {
+          if (currentTheme === 'dark') {
+            lightBadge.style.display = 'none';
+            darkBadge.style.display = 'block';
+          } else {
+            lightBadge.style.display = 'block';
+            darkBadge.style.display = 'none';
+          }
+        }
+
+        // Initialize theme icons on load
+        var iconLight = document.querySelector('.icon-light');
+        var iconDark = document.querySelector('.icon-dark');
+        if (iconLight && iconDark) {
+          if (currentTheme === 'dark') {
+            iconLight.style.display = 'none';
+            iconDark.style.display = 'inline';
+          } else {
+            iconLight.style.display = 'inline';
+            iconDark.style.display = 'none';
+          }
+        }
+
+        var scrollBlur = document.getElementById('scrollBlur');
+        var scrollThreshold = 100; // Start fading after 100px scroll
+        var maxBlurScroll = 300;   // Full blur at 300px scroll
+
+        function updateScrollBlur() {
+          if (!scrollBlur) return;
+          var scrollY = window.scrollY || window.pageYOffset;
+          var blurOpacity = Math.min(0.7, Math.max(0, (scrollY - scrollThreshold) / (maxBlurScroll - scrollThreshold) * 0.7));
+          scrollBlur.style.opacity = blurOpacity;
+        }
+
+        
+        if (bg) {
+          window.addEventListener('scroll', updateScrollBlur, { passive: true });
+          updateScrollBlur(); // Initialize
+          
+          var prefersReduced =
+            window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+          if (!prefersReduced) {
+            var target = 0;
+            var current = 0;
+            var rafId = 0;
+            var factor = 0.06;
+            var ease = 0.085;
+
+            function animate() {
+              rafId = 0;
+              current += (target - current) * ease;
+              if (Math.abs(target - current) < 0.1) current = target;
+              bg.style.transform = 'translate3d(0,' + Math.round(current) + 'px,0)';
+              if (current !== target) rafId = window.requestAnimationFrame(animate);
+            }
+
+            function onScroll() {
+              var y = window.scrollY || window.pageYOffset || 0;
+              target = -y * factor;
+              if (!rafId) rafId = window.requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+            onScroll();
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
